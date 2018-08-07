@@ -1,42 +1,12 @@
-import tensorflow as tf
-import numpy as np
 import tensorflow_hub as hub
 import keras.layers as layers
 from keras.models import Model
-from keras.models import Sequential, load_model
-from keras.layers import Dense, Dropout, Input
+from keras.layers import Dense, Input
 from tensorflow.examples.tutorials.mnist import input_data
-from keras.engine.topology import Layer
-from keras import backend as K
 
 mnist = input_data.read_data_sets('../data/raw/mnist')
 mnist_hub_dir = '../data/hub_module/mnist_module'
-
-
-
-
-class TrainableHubRayer(Layer):
-
-    def __init__(self, output_dim, **kwargs):
-        self.output_dim = output_dim
-        super(TrainableHubRayer, self).__init__(**kwargs)
-
-    def build(self, input_shape):
-        # Create a trainable weight variable for this layer.
-        self.kernel = self.add_weight(name='kernel',
-                                      shape=(input_shape[1], self.output_dim),
-                                      initializer='uniform',
-                                      trainable=True)
-        super(TrainableHubRayer, self).build(input_shape)  # Be sure to call this somewhere!
-
-    def call(self, x):
-        return K.dot(x, self.kernel)
-
-    def compute_output_shape(self, input_shape):
-        return (input_shape[0], self.output_dim)
-
-
-
+keras_model_weight_dir = '../data/keras_model/include_tensorflowhub_model_weight.h5'
 
 
 def batch_iter(batch_size, phase="train"):
@@ -46,8 +16,6 @@ def batch_iter(batch_size, phase="train"):
     if phase == "test":
         num_data = mnist.test.num_examples
     batch_per_epoch = int(num_data / batch_size) + 1
-
-    print(batch_per_epoch)
 
     def data_generator():
         while True:
@@ -78,9 +46,9 @@ def train_save_model():
     input_img = Input(shape=(784, ), dtype='float32')
 
     # Hidden Layers
-    predict = layers.Lambda(mnist_hub_fn, output_shape=[10])(input_img)
-    # hidden = Dense(units=256, activation='relu')(hidden)
-    # predict = Dense(units=10, activation='softmax')(hidden)
+    hidden = layers.Lambda(mnist_hub_fn, output_shape=[10])(input_img)
+    hidden = Dense(units=256, activation='relu')(hidden)
+    predict = Dense(units=10, activation='softmax')(hidden)
 
     model = Model(inputs=[input_img], outputs=predict)
     model.compile(optimizer='adam',
@@ -88,7 +56,6 @@ def train_save_model():
                   metrics=['accuracy'])
 
     model.summary()
-    print(mnist.train.images.shape)
 
     batch_size = 32
     train_steps, train_batch_iter = batch_iter(batch_size, phase="train")
@@ -97,39 +64,16 @@ def train_save_model():
     model.fit_generator(train_batch_iter, train_steps, epochs=1, validation_data=test_batch_iter, validation_steps=test_steps)
 
     score = model.evaluate(mnist.test.images, mnist.test.labels)
+    print("------ test LOSS and accuracy ------")
     print(score)
 
-    # Todo Saved model with retrained module of tensorflow hub
-    # model.save("../data/keras_model/mnist_keras_model.h5")
-
-    # serialize model to JSON
-    # model_json = model.to_json()
-    # with open("../data/keras_model/include_tensorflowhub_model.json", "w") as json_file:
-    #     json_file.write(model_json)
-    # serialize weights to HDF5
-    model.save_weights("../data/keras_model/include_tensorflowhub_model_weight.h5")
+    # save keras layers weights without hub module's weights.
+    model.save_weights(keras_model_weight_dir)
     print("Saved model to disk")
-
-    print(model.get_weights())
-
-
-def load_evaluate_model():
-    model = load_model("../data/keras_model/mnist_keras_model.h5")
-    model.add(Dense(513, activation='relu'))
-    model.add(Dense(10, activation='softmax'))
-
-    model.fit(mnist.train.images, mnist.train.labels, epochs=1)
-
-    score = model.evaluate(mnist.test.images, mnist.test.labels)
-    print(score)
-
-    batch_xs, batch_ys = mnist.train.next_batch(1)
-    print(model.predict(batch_xs))
-    print(batch_ys)
+    # print(model.get_weights())
 
 
 def load_weight_evaluate_model():
-    model_file = "../data/keras_model/include_tensorflowhub_model_weight.h5"
 
     module = hub.Module(mnist_hub_dir, trainable=True)
     def mnist_hub_fn(x):
@@ -140,9 +84,9 @@ def load_weight_evaluate_model():
     input_img = Input(shape=(784, ), dtype='float32')
 
     # Hidden Layers
-    predict = layers.Lambda(mnist_hub_fn, output_shape=[10])(input_img)
-    # hidden = Dense(units=256, activation='relu')(hidden)
-    # predict = Dense(units=10, activation='softmax')(hidden)
+    hidden = layers.Lambda(mnist_hub_fn, output_shape=[10])(input_img)
+    hidden = Dense(units=256, activation='relu')(hidden)
+    predict = Dense(units=10, activation='softmax')(hidden)
 
     model = Model(inputs=[input_img], outputs=predict)
     model.compile(optimizer='adam',
@@ -151,17 +95,16 @@ def load_weight_evaluate_model():
 
     model.summary()
 
-    model.load_weights(model_file)
+    model.load_weights(keras_model_weight_dir)
     score = model.evaluate(mnist.test.images, mnist.test.labels)
+    print("------ Load model LOSS and accuracy ------")
     print(score)
-
-    print(model.get_weights())
+    # print(model.get_weights())
 
 
 
 if __name__ == '__main__':
     train_save_model()
-    # load_evaluate_model()
     load_weight_evaluate_model()
 
 
