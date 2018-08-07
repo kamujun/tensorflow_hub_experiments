@@ -7,6 +7,7 @@ Following experiments are included in this repository.
 * Fine-tuning hub module, and save model inculuded hub module.
 * Using own hub module in Keras.
 
+<img src="https://raw.githubusercontent.com/kamujun/tensorflow_hub_experiments/master/docs/images/TensorFlow_Hub_Experiments_Overview.png" width="600px">
 
 ## Directory layout
     .
