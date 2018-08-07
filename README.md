@@ -25,7 +25,7 @@ $ cd scripts
 
 # Experiments
 
-## Make and export MNIST model
+## 1. Make and export MNIST model
 Make model and train with the training dataset of 500 records against MNIST. (This training dataset is "VERY SMALL" because observe efficient of fine-tuning.) In this case, trained model's accuracy is "0.681".
 
 Next, load making hub module and fine-tuning that with another 500 records. Retrained model's accuracy "0.8209" outperform the before model.
@@ -57,8 +57,31 @@ Tensor("y:0", shape=(?, 10), dtype=float32)
 ```
 
 
+## 2. Using hub module and adding the graph, save the new model.
+Load hub module and add new graph. Then, train new model (add graph is trained, hub module is fine-tuned) and evaluate new model. As a result, new model accuracy is "0.78".
 
+```
+$ python using_hub_example.py
+------ test only hub module accuracy ------
+0.59
+100%|█████████████████████████████████████████████████| 5/5 [00:00<00:00, 20.60it/s]
+------ trained new model with hub module accuracy ------
+0.75
+------ loading new model with hub module accuracy ------
+0.78
+```
 
+In addition, I introduce hosting hub module by your cloud storage. 
+First, you compress to tar ball with the following command.(Linux and Unix commands)
 
+```
+$ tar cfz mnist_hub.tgz ../data/hub_module/mnist_module/
+```
 
+Second, upload tgz to your cloud storage like AWS S3, Google Cloud Storage.
 
+Finally, download hub module from your storage with the additional query.
+
+```
+mnist_hub_dir = 'https://your_hosting_address/mnist_module.tgz?tf-hub-format=compressed'
+```
