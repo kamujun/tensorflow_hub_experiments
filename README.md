@@ -12,6 +12,7 @@ Following experiments are included in this repository.
     .
     ├── data                
     │   ├── hub_module      # Hub module exported
+    │   ├── keras_model     # Keras model's weight saved
     │   ├── model           # Model of solving MNIST
     │   └── raw             # MNIST dataset
     └── scripts             # Experimtens codes
